@@ -318,6 +318,65 @@
         width:220px;box-sizing:border-box;"></div>
 
     <script>
+    // Base de données fiscale et coût de la vie par canton (Données officielles 2026)
+    const cantonDataMatrix = {
+        'ZH': { tax: 0.135, rent: 2100, cost: 1.08, jobScore: 5, vacancy: 0.53, search: 90, name: 'Zurich' },
+        'BE': { tax: 0.225, rent: 1650, cost: 1.05, jobScore: 4, vacancy: 1.18, search: 60, name: 'Berne' },
+        'LU': { tax: 0.180, rent: 1750, cost: 1.10, jobScore: 3, vacancy: 0.92, search: 60, name: 'Lucerne' },
+        'UR': { tax: 0.165, rent: 1350, cost: 0.95, jobScore: 1, vacancy: 1.12, search: 45, name: 'Uri' },
+        'SZ': { tax: 0.145, rent: 2200, cost: 1.05, jobScore: 2, vacancy: 0.55, search: 90, name: 'Schwytz' },
+        'OW': { tax: 0.170, rent: 1500, cost: 1.00, jobScore: 2, vacancy: 0.88, search: 60, name: 'Obwald' },
+        'NW': { tax: 0.160, rent: 1800, cost: 1.02, jobScore: 2, vacancy: 0.76, search: 65, name: 'Nidwald' },
+        'GL': { tax: 0.190, rent: 1400, cost: 0.92, jobScore: 2, vacancy: 1.85, search: 30, name: 'Glaris' },
+        'ZG': { tax: 0.119, rent: 2450, cost: 1.12, jobScore: 3, vacancy: 0.39, search: 120, name: 'Zoug' },
+        'FR': { tax: 0.210, rent: 1500, cost: 0.98, jobScore: 3, vacancy: 1.24, search: 45, name: 'Fribourg' },
+        'SO': { tax: 0.215, rent: 1450, cost: 0.96, jobScore: 3, vacancy: 2.11, search: 25, name: 'Soleure' },
+        'BS': { tax: 0.220, rent: 1700, cost: 1.05, jobScore: 5, vacancy: 1.05, search: 75, name: 'Bâle-Ville' },
+        'BL': { tax: 0.218, rent: 1750, cost: 1.02, jobScore: 3, vacancy: 1.21, search: 45, name: 'Bâle-Campagne' },
+        'SH': { tax: 0.195, rent: 1450, cost: 0.98, jobScore: 3, vacancy: 1.28, search: 45, name: 'Schaffhouse' },
+        'AR': { tax: 0.190, rent: 1400, cost: 0.96, jobScore: 1, vacancy: 1.62, search: 30, name: 'Appenzell Rh. Ext.' },
+        'AI': { tax: 0.155, rent: 1300, cost: 0.94, jobScore: 1, vacancy: 0.82, search: 60, name: 'Appenzell Rh. Int.' },
+        'SG': { tax: 0.200, rent: 1600, cost: 1.02, jobScore: 4, vacancy: 1.55, search: 40, name: 'Saint-Gall' },
+        'GR': { tax: 0.170, rent: 1700, cost: 1.08, jobScore: 2, vacancy: 0.98, search: 60, name: 'Grisons' },
+        'AG': { tax: 0.185, rent: 1600, cost: 1.00, jobScore: 3, vacancy: 1.34, search: 45, name: 'Argovie' },
+        'TG': { tax: 0.190, rent: 1550, cost: 1.00, jobScore: 3, vacancy: 1.68, search: 35, name: 'Thurgovie' },
+        'TI': { tax: 0.185, rent: 1600, cost: 1.02, jobScore: 3, vacancy: 1.94, search: 30, name: 'Tessin' },
+        'VD': { tax: 0.218, rent: 2300, cost: 1.15, jobScore: 5, vacancy: 0.58, search: 90, name: 'Vaud' },
+        'VS': { tax: 0.205, rent: 1400, cost: 0.96, jobScore: 3, vacancy: 1.32, search: 45, name: 'Valais' },
+        'NE': { tax: 0.238, rent: 1400, cost: 0.96, jobScore: 3, vacancy: 1.48, search: 35, name: 'Neuchâtel' },
+        'GE': { tax: 0.215, rent: 2500, cost: 1.20, jobScore: 5, vacancy: 0.42, search: 120, name: 'Genève' },
+        'JU': { tax: 0.235, rent: 1300, cost: 0.94, jobScore: 2, vacancy: 2.17, search: 25, name: 'Jura' }
+    };
+
+    const cantonTopCities = {
+        'AG': [{n: 'Aarau', p: 21800}, {n: 'Baden', p: 19700}, {n: 'Wettingen', p: 18500}],
+        'AI': [{n: 'Appenzell', p: 5800}, {n: 'Schwende-R.', p: 2500}, {n: 'Oberegg', p: 1900}],
+        'AR': [{n: 'Herisau', p: 15700}, {n: 'Teufen', p: 6400}, {n: 'Speicher', p: 4400}],
+        'BE': [{n: 'Berne', p: 134500}, {n: 'Bienne', p: 55600}, {n: 'Thoune', p: 43600}],
+        'BL': [{n: 'Allschwil', p: 21500}, {n: 'Muttenz', p: 18000}, {n: 'Pratteln', p: 16600}],
+        'BS': [{n: 'Bâle', p: 173500}, {n: 'Riehen', p: 21900}, {n: 'Bettingen', p: 12000}],
+        'FR': [{n: 'Fribourg', p: 38000}, {n: 'Bulle', p: 24400}, {n: 'Villars-sur-Glâne', p: 12300}],
+        'GE': [{n: 'Genève', p: 203800}, {n: 'Vernier', p: 35400}, {n: 'Lancy', p: 34600}],
+        'GL': [{n: 'Glaris Nord', p: 18900}, {n: 'Glaris Centre', p: 12500}, {n: 'Glaris Sud', p: 9500}],
+        'GR': [{n: 'Coire', p: 37500}, {n: 'Davos', p: 10800}, {n: 'Igis', p: 8000}],
+        'JU': [{n: 'Delémont', p: 12600}, {n: 'Porrentruy', p: 6400}, {n: 'Haute-Sorne', p: 7300}],
+        'LU': [{n: 'Lucerne', p: 83000}, {n: 'Emmen', p: 31000}, {n: 'Kriens', p: 28300}],
+        'NE': [{n: 'Neuchâtel', p: 44500}, {n: 'La Chaux-de-Fonds', p: 36900}, {n: 'Val-de-Ruz', p: 17400}],
+        'NW': [{n: 'Stans', p: 8400}, {n: 'Hergiswil', p: 5800}, {n: 'Buochs', p: 5400}],
+        'OW': [{n: 'Sarnen', p: 10400}, {n: 'Kerns', p: 6400}, {n: 'Alpnach', p: 6100}],
+        'SG': [{n: 'Saint-Gall', p: 76300}, {n: 'Rapperswil-Jona', p: 27400}, {n: 'Wil', p: 24300}],
+        'SH': [{n: 'Schaffhouse', p: 37700}, {n: 'Neuhausen', p: 10500}, {n: 'Thayngen', p: 5600}],
+        'SO': [{n: 'Olten', p: 18500}, {n: 'Soleure', p: 17300}, {n: 'Grenchen', p: 17500}],
+        'SZ': [{n: 'Freienbach', p: 16700}, {n: 'Küssnacht', p: 13300}, {n: 'Einsiedeln', p: 16200}],
+        'TG': [{n: 'Frauenfeld', p: 26000}, {n: 'Kreuzlingen', p: 22700}, {n: 'Arbon', p: 15000}],
+        'TI': [{n: 'Lugano', p: 62500}, {n: 'Bellinzone', p: 43300}, {n: 'Locarno', p: 16200}],
+        'UR': [{n: 'Altdorf', p: 9800}, {n: 'Bürglen', p: 4000}, {n: 'Erstfeld', p: 3900}],
+        'VD': [{n: 'Lausanne', p: 141400}, {n: 'Yverdon', p: 30000}, {n: 'Montreux', p: 26000}],
+        'VS': [{n: 'Sion', p: 35600}, {n: 'Martigny', p: 18500}, {n: 'Monthey', p: 18100}],
+        'ZG': [{n: 'Zoug', p: 31000}, {n: 'Baar', p: 24700}, {n: 'Cham', p: 17000}],
+        'ZH': [{n: 'Zurich', p: 428000}, {n: 'Winterthour', p: 115000}, {n: 'Uster', p: 35800}]
+    };
+
     const fmtNb = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
 
     function updateSliderFill(id) {
@@ -333,10 +392,41 @@
         updateChart();
     }
 
+    // Moteur fiscal local (Traduction pure du script Python)
+    function localCalculateFiscal(salaryAnnuel, cantonCode, rentAnnuel, leisureAnnuel) {
+        const c = cantonDataMatrix[cantonCode] || cantonDataMatrix['GE'];
+        
+        // Cotisations sociales (AVS, AC, LPP estimées à 7.2%)
+        const socialRate = 0.072;
+        const socialValues = salaryAnnuel * socialRate;
+        
+        // Impôt estimé basé sur la matrice fiscale
+        const taxValues = salaryAnnuel * c.tax;
+        
+        // Net disponible théorique avant dépenses
+        const netValues = salaryAnnuel - socialValues - taxValues;
+        
+        // Primes d'assurance maladie standardisées (LAMal moyenne estimée à 4200 CHF/an)
+        const healthValues = 4200;
+        
+        // Reste à vivre (Épargne)
+        const savingsValues = netValues - rentAnnuel - leisureAnnuel - healthValues;
+
+        return {
+            values: [socialValues, netValues, taxValues, rentAnnuel, healthValues, leisureAnnuel, savingsValues],
+            tax_rate: (c.tax * 100).toFixed(1),
+            savings_rate: salaryAnnuel > 0 ? Math.round((savingsValues / salaryAnnuel) * 100) : 0,
+            tax_details: {
+                federal: Math.round(taxValues * 0.15),
+                cantonal: Math.round(taxValues * 0.50),
+                communal: Math.round(taxValues * 0.35)
+            }
+        };
+    }
+
     function renderSankey(data, diviseur) {
         const fmt = (val) => fmtNb(Math.round(val / diviseur)) + " CHF";
         const v_div = data.values.map(v => Math.max(0.1, v / diviseur));
-
         const totalSalary = parseFloat(document.getElementById('salary').value);
         
         const pctOfBrut = (val) => {
@@ -359,7 +449,7 @@
                     `Épargne: ${fmt(data.values[6])}${pctOfBrut(data.values[6])}`,
                     `Logement: ${fmt(data.values[3])}${pctOfBrut(data.values[3])}`,
                     `Vie: ${fmt(data.values[5])}${pctOfBrut(data.values[5])}`,
-                    `Santé: ${fmt(data.values[4])}${pctOfBrut(data.values[4])}`
+                    `Santé: ${fmt(data.values[4])}${pct(data.values[4])}`
                 ],
                 color: ["#1d1d1f", "#7f8c8d", "#007AFF", "#e74c3c", "#86868b", "#34c759", "#ff9500", "#ffcc00", "#5856d6"],
                 hovertemplate: "%{label}<extra></extra>"
@@ -426,135 +516,81 @@
         }
     }
 
-    async function updateChart(event) {
+    function updateChart(event) {
+        const isMensuel = document.getElementById('period-toggle').checked;
+        const cantonValue = document.getElementById('canton').value;
+        const factor = isMensuel ? 1 : 12;
+
         if (event && event.target.id === 'canton') {
-            const response = await fetch('/get_canton_defaults?canton=' + event.target.value);
-            const defaults = await response.json();
-            const isMensuel = document.getElementById('period-toggle').checked;
-            const factor = isMensuel ? 1 : 12; 
-            
-            const rentVal = Math.round(defaults.rent * factor);
+            const defaults = cantonDataMatrix[cantonValue];
+            const rentVal = Math.round((defaults.rent / 12) * factor * 12);
             document.getElementById('rent').value = rentVal;
             document.getElementById('rentInput').value = rentVal;
             updateSliderFill('rent');
 
             const baseVie = 1200; 
-            const vieVal = Math.round((baseVie * defaults.cost_index) * factor);
+            const vieVal = Math.round((baseVie * defaults.cost) * factor);
             document.getElementById('leisure').value = vieVal;
             document.getElementById('leisureInput').value = vieVal;
             updateSliderFill('leisure');
         }
-        try {
-            const isMensuel = document.getElementById('period-toggle').checked;
-            const cantonValue = document.getElementById('canton').value;
-            const diviseur = isMensuel ? 12 : 1;
-            const elements = {
-                salary: { s: 'salary', i: 'salaryInput', maxA: 500000, maxM: 40000, stepA: 1000, stepM: 100 },
-                rent: { s: 'rent', i: 'rentInput', maxA: 100000, maxM: 10000, stepA: 500, stepM: 50 },
-                leisure: { s: 'leisure', i: 'leisureInput', maxA: 100000, maxM: 10000, stepA: 500, stepM: 50 }
-            };
 
-            if (event && event.target.id === 'period-toggle') {
-                for (let key in elements) {
-                    const cfg = elements[key];
-                    const s = document.getElementById(cfg.s);
-                    const i = document.getElementById(cfg.i);
-                    let val = parseFloat(s.value);
-                    if (isMensuel) {
-                        val = Math.round((val / 12) / 10) * 10;
-                        [s, i].forEach(el => { el.max = cfg.maxM; el.step = cfg.stepM; el.value = val; });
-                    } else {
-                        val = val * 12;
-                        [s, i].forEach(el => { el.max = cfg.maxA; el.step = cfg.stepA; el.value = val; });
-                    }
-                    updateSliderFill(cfg.s);
+        const diviseur = isMensuel ? 12 : 1;
+        const elements = {
+            salary: { s: 'salary', i: 'salaryInput', maxA: 500000, maxM: 40000, stepA: 1000, stepM: 100 },
+            rent: { s: 'rent', i: 'rentInput', maxA: 100000, maxM: 10000, stepA: 500, stepM: 50 },
+            leisure: { s: 'leisure', i: 'leisureInput', maxA: 100000, maxM: 10000, stepA: 500, stepM: 50 }
+        };
+
+        if (event && event.target.id === 'period-toggle') {
+            for (let key in elements) {
+                const cfg = elements[key];
+                const s = document.getElementById(cfg.s);
+                const i = document.getElementById(cfg.i);
+                let val = parseFloat(s.value);
+                if (isMensuel) {
+                    val = Math.round((val / 12) / 10) * 10;
+                    [s, i].forEach(el => { el.max = cfg.maxM; el.step = cfg.stepM; el.value = val; });
+                } else {
+                    val = val * 12;
+                    [s, i].forEach(el => { el.max = cfg.maxA; el.step = cfg.stepA; el.value = val; });
                 }
+                updateSliderFill(cfg.s);
             }
+        }
 
-            const response = await fetch('/calculate', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    salary: isMensuel ? document.getElementById('salary').value * 12 : document.getElementById('salary').value,
-                    canton: cantonValue,
-                    rent: isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value,
-                    leisure: isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value
-                })
-            });
+        // Calculateur local synchrone (Plus besoin d'appel réseau HTTP !)
+        const inputSalary = isMensuel ? document.getElementById('salary').value * 12 : document.getElementById('salary').value;
+        const inputRent = isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value;
+        const inputLeisure = isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value;
 
-            const data = await response.json();
-            renderSankey(data, diviseur);
-        } catch (e) { console.error(e); }
+        const data = localCalculateFiscal(inputSalary, cantonValue, inputRent, inputLeisure);
+        renderSankey(data, diviseur);
     }
 
     async function initMap() {
         try {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-
-            const response = await fetch('/get_all_cantons');
-            const dataFromCsv = await response.json();
-
-            const mapLabelsTranslation = {
-                'AG':'Argovie','AI':'Appenzell Rh. Int.','AR':'Appenzell Rh. Ext.',
-                'BE':'Berne','BL':'Bâle-Campagne','BS':'Bâle-Ville',
-                'FR':'Fribourg','GE':'Genève','GL':'Glaris',
-                'GR':'Grisons','JU':'Jura','LU':'Lucerne',
-                'NE':'Neuchâtel','NW':'Nidwald','OW':'Obwald',
-                'SG':'Saint-Gall','SH':'Schaffhouse','SO':'Soleure',
-                'SZ':'Schwytz','TG':'Thurgovie','TI':'Tessin',
-                'UR':'Uri','VD':'Vaud','VS':'Valais',
-                'ZG':'Zoug','ZH':'Zurich'
-            };
-
-            const cantonTopCities = {
-                'AG': { cities: [{n: 'Aarau', p: 21800}, {n: 'Baden', p: 19700}, {n: 'Wettingen', p: 18500}], jobScore: 3, vacancy: 1.34, search: 45 },
-                'AI': { cities: [{n: 'Appenzell', p: 5800}, {n: 'Schwende-R.', p: 2500}, {n: 'Oberegg', p: 1900}], jobScore: 1, vacancy: 0.82, search: 60 },
-                'AR': { cities: [{n: 'Herisau', p: 15700}, {n: 'Teufen', p: 6400}, {n: 'Speicher', p: 4400}], jobScore: 1, vacancy: 1.62, search: 30 },
-                'BE': { cities: [{n: 'Berne', p: 134500}, {n: 'Bienne', p: 55600}, {n: 'Thoune', p: 43600}], jobScore: 4, vacancy: 1.18, search: 60 },
-                'BL': { cities: [{n: 'Allschwil', p: 21500}, {n: 'Muttenz', p: 18000}, {n: 'Pratteln', p: 16600}], jobScore: 3, vacancy: 1.21, search: 45 },
-                'BS': { cities: [{n: 'Bâle', p: 173500}, {n: 'Riehen', p: 21900}, {n: 'Bettingen', p: 12000}], jobScore: 5, vacancy: 1.05, search: 75 },
-                'FR': { cities: [{n: 'Fribourg', p: 38000}, {n: 'Bulle', p: 24400}, {n: 'Villars-sur-Glâne', p: 12300}], jobScore: 3, vacancy: 1.24, search: 45 },
-                'GE': { cities: [{n: 'Genève', p: 203800}, {n: 'Vernier', p: 35400}, {n: 'Lancy', p: 34600}], jobScore: 5, vacancy: 0.42, search: 120 },
-                'GL': { cities: [{n: 'Glaris Nord', p: 18900}, {n: 'Glaris Centre', p: 12500}, {n: 'Glaris Sud', p: 9500}], jobScore: 2, vacancy: 1.85, search: 30 },
-                'GR': { cities: [{n: 'Coire', p: 37500}, {n: 'Davos', p: 10800}, {n: 'Igis', p: 8000}], jobScore: 2, vacancy: 0.98, search: 60 },
-                'JU': { cities: [{n: 'Delémont', p: 12600}, {n: 'Porrentruy', p: 6400}, {n: 'Haute-Sorne', p: 7300}], jobScore: 2, vacancy: 2.17, search: 25 },
-                'LU': { cities: [{n: 'Lucerne', p: 83000}, {n: 'Emmen', p: 31000}, {n: 'Kriens', p: 28300}], jobScore: 3, vacancy: 0.92, search: 60 },
-                'NE': { cities: [{n: 'Neuchâtel', p: 44500}, {n: 'La Chaux-de-Fonds', p: 36900}, {n: 'Val-de-Ruz', p: 17400}], jobScore: 3, vacancy: 1.48, search: 35 },
-                'NW': { cities: [{n: 'Stans', p: 8400}, {n: 'Hergiswil', p: 5800}, {n: 'Buochs', p: 5400}], jobScore: 2, vacancy: 0.76, search: 65 },
-                'OW': { cities: [{n: 'Sarnen', p: 10400}, {n: 'Kerns', p: 6400}, {n: 'Alpnach', p: 6100}], jobScore: 2, vacancy: 0.88, search: 60 },
-                'SG': { cities: [{n: 'Saint-Gall', p: 76300}, {n: 'Rapperswil-Jona', p: 27400}, {n: 'Wil', p: 24300}], jobScore: 4, vacancy: 1.55, search: 40 },
-                'SH': { cities: [{n: 'Schaffhouse', p: 37700}, {n: 'Neuhausen', p: 10500}, {n: 'Thayngen', p: 5600}], jobScore: 3, vacancy: 1.28, search: 45 },
-                'SO': { cities: [{n: 'Olten', p: 18500}, {n: 'Soleure', p: 17300}, {n: 'Grenchen', p: 17500}], jobScore: 3, vacancy: 2.11, search: 25 },
-                'SZ': { cities: [{n: 'Freienbach', p: 16700}, {n: 'Küssnacht', p: 13300}, {n: 'Einsiedeln', p: 16200}], jobScore: 2, vacancy: 0.55, search: 90 },
-                'TG': { cities: [{n: 'Frauenfeld', p: 26000}, {n: 'Kreuzlingen', p: 22700}, {n: 'Arbon', p: 15000}], jobScore: 3, vacancy: 1.68, search: 35 },
-                'TI': { cities: [{n: 'Lugano', p: 62500}, {n: 'Bellinzone', p: 43300}, {n: 'Locarno', p: 16200}], jobScore: 3, vacancy: 1.94, search: 30 },
-                'UR': { cities: [{n: 'Altdorf', p: 9800}, {n: 'Bürglen', p: 4000}, {n: 'Erstfeld', p: 3900}], jobScore: 1, vacancy: 1.12, search: 45 },
-                'VD': { cities: [{n: 'Lausanne', p: 141400}, {n: 'Yverdon', p: 30000}, {n: 'Montreux', p: 26000}], jobScore: 5, vacancy: 0.58, search: 90 },
-                'VS': { cities: [{n: 'Sion', p: 35600}, {n: 'Martigny', p: 18500}, {n: 'Monthey', p: 18100}], jobScore: 3, vacancy: 1.32, search: 45 },
-                'ZG': { cities: [{n: 'Zoug', p: 31000}, {n: 'Baar', p: 24700}, {n: 'Cham', p: 17000}], jobScore: 3, vacancy: 0.39, search: 120 },
-                'ZH': { cities: [{n: 'Zurich', p: 428000}, {n: 'Winterthour', p: 115000}, {n: 'Uster', p: 35800}], jobScore: 5, vacancy: 0.53, search: 90 }
-            };
-
             const highchartsKeyMapping = {
                 'ow': 'unterwalden-ob-dem-wald',
                 'nw': 'unterwalden-nid-dem-wald'
             };
 
-            const mapData = dataFromCsv.map(c => {
-                const codeLowerCase = c.Canton.toLowerCase();
+            // Traitement des données locales statiques
+            const mapData = Object.keys(cantonDataMatrix).map(code => {
+                const c = cantonDataMatrix[code];
+                const codeLowerCase = code.toLowerCase();
                 const hcSuffix = highchartsKeyMapping[codeLowerCase] || codeLowerCase;
-                const finalFrenchLabel = mapLabelsTranslation[c.Canton] || c.Canton;
-                const config = cantonTopCities[c.Canton] || { cities: [], jobScore: 3, vacancy: 1.2, search: 45 };
 
                 return {
                     'hc-key': 'ch-' + hcSuffix,
-                    value: c.Tax_Rate_Base * 100,
-                    name: finalFrenchLabel, 
-                    raw: c,
-                    cityList: config.cities,
-                    jobScore: config.jobScore,
-                    vacancy: config.vacancy,
-                    search: config.search
+                    value: c.tax * 100,
+                    name: c.name, 
+                    cantonCode: code,
+                    vacancy: c.vacancy,
+                    search: c.search,
+                    jobScore: c.jobScore,
+                    costIndex: c.cost,
+                    rentValue: c.rent
                 };
             });
 
@@ -579,9 +615,7 @@
                             allowOverlap: true,
                             crop: false,
                             overflow: 'allow',
-                            formatter: function() {
-                                return this.point.name;
-                            },
+                            formatter: function() { return this.point.name; },
                             style: {
                                 fontSize: '10px',
                                 fontWeight: '700',
@@ -595,22 +629,18 @@
                     series: {
                         point: {
                             events: {
-                                mouseOver: async function () {
-                                    const c = this.raw;
-                                    if (!c) return;
-
-                                    // Panel droit - Activation des conteneurs
+                                mouseOver: function () {
+                                    // Activation immédiate du volet droit
                                     document.getElementById('detail-default').style.display = 'none';
                                     document.getElementById('detail-data').style.display = 'block';
                                     document.getElementById('detail-name').innerText = this.name;
 
-                                    // Génération du micro-classement des communes
-                                    if (this.cityList && this.cityList.length > 0) {
-                                        const maxPop = this.cityList[0].p;
-                                        let citiesHtml = `<div style="margin-top: 10px; padding: 4px 0 2px 0;">` +
-                                                         `<p style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--obs-text-muted); margin: 0 0 8px 0; font-weight:700;">🏙️ Grandes Villes (Pop.)</p>`;
-                                        
-                                        citiesHtml += this.cityList.map((city, idx) => {
+                                    // Grandes Villes
+                                    const cities = cantonTopCities[this.cantonCode] || [];
+                                    if (cities.length > 0) {
+                                        const maxPop = cities[0].p;
+                                        let citiesHtml = `<div style="margin-top: 10px; padding: 4px 0 2px 0;"><p style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--obs-text-muted); margin: 0 0 8px 0; font-weight:700;">🏙️ Grandes Villes (Pop.)</p>`;
+                                        citiesHtml += cities.map((city, idx) => {
                                             const widthPct = Math.max(15, Math.round((city.p / maxPop) * 100));
                                             return `<div class="rank-row" style="margin-bottom: 6px; align-items: center; display: flex; gap: 8px;">` +
                                                    `<span style="font-size: 0.75rem; font-weight: 700; width: 14px; color: var(--primary); text-align: left;">${idx + 1}</span>` +
@@ -621,82 +651,55 @@
                                                    `<span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-align: right; width: 55px; white-space: nowrap;">${fmtNb(city.p)}</span>` +
                                                    `</div>`;
                                         }).join('');
-                                        citiesHtml += `</div>`;
-                                        document.getElementById('detail-subtitle').innerHTML = citiesHtml;
-                                    } else {
-                                        document.getElementById('detail-subtitle').innerText = 'Statistiques officielles';
+                                        document.getElementById('detail-subtitle').innerHTML = citiesHtml + `</div>`;
                                     }
 
-                                    // Hydratation des statistiques principales fixes
-                                    document.getElementById('stat-tax').innerText = (c.Tax_Rate_Base * 100).toFixed(1) + "%";
-                                    document.getElementById('stat-rent').innerText = fmtNb(c.Rent_3_5_Rooms) + " CHF";
-                                    document.getElementById('stat-cost').innerText = c.Cost_of_Living_Factor + "x";
+                                    // Données fixes de la ligne
+                                    document.getElementById('stat-tax').innerText = this.value.toFixed(1) + "%";
+                                    document.getElementById('stat-rent').innerText = fmtNb(this.rentValue) + " CHF";
+                                    document.getElementById('stat-cost').innerText = this.costIndex + "x";
 
-                                    // 1. INJECTION IMMOBILIÈRE DANS LE GRAND BLOC UNIQUE UNIFIÉ
+                                    // Injection sous-composants immo
                                     document.getElementById('detail-immo-sub').innerHTML = `
                                         <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                            <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.02em; display:flex; align-items:center; gap:3px;">
-                                                ⏱️ Recherche
-                                                <i class="ti ti-info-circle" style="font-size:0.7rem; opacity:0.5; cursor:help;" title="Estimation du temps moyen nécessaire à un expatrié pour trouver et signer un bail résidentiel dans ce canton."></i>
-                                            </span>
+                                            <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.02em; display:flex; align-items:center; gap:3px;">⏱️ Recherche <i class="ti ti-info-circle" style="font-size:0.7rem; opacity:0.5; cursor:help;" title="Temps moyen estimé pour signer un bail."></i></span>
                                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--obs-text);">~${this.search} jours</span>
                                         </div>
                                         <div style="flex: 1; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border); padding-left: 12px;">
-                                            <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.02em; display:flex; align-items:center; gap:3px;">
-                                                📉 Vacance
-                                                <i class="ti ti-info-circle" style="font-size:0.7rem; opacity:0.5; cursor:help;" title="Taux de logements vacants officiel (OFS). Un taux inférieur à 1% indique une pénurie importante sur le marché locatif."></i>
-                                            </span>
+                                            <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.02em; display:flex; align-items:center; gap:3px;">📉 Vacance <i class="ti ti-info-circle" style="font-size:0.7rem; opacity:0.5; cursor:help;" title="Taux de vacance officiel (OFS)."></i></span>
                                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--obs-text);">${this.vacancy.toFixed(2)}%</span>
                                         </div>
                                     `;
 
-                                    // Pré-calculs BI indispensables avant toute injection HTML
-                                    const userSalarySlider = document.getElementById('salary');
-                                    const currentSalary = userSalarySlider ? parseFloat(userSalarySlider.value) : 180000;
-                                    const isMensuel = document.getElementById('period-toggle').checked;
-                                    const periodLabel = isMensuel ? '/ mois' : '/ an';
-
+                                    // Évaluation de la note globale
                                     let score = 10.0;
-                                    if (c.Tax_Rate_Base > 0.20) score -= 2.0;
-                                    else if (c.Tax_Rate_Base > 0.15) score -= 1.0;
-                                    if (c.Rent_3_5_Rooms > 2100) score -= 2.0;
-                                    else if (c.Rent_3_5_Rooms > 1500) score -= 1.0;
-
-                                    if (this.jobScore === 5) score += 1.0;
-                                    else if (this.jobScore === 4) score += 0.5;
-                                    else if (this.jobScore <= 2) score -= 1.0;
+                                    if (this.value > 20) score -= 2.0; else if (this.value > 15) score -= 1.0;
+                                    if (this.rentValue > 2100) score -= 2.0; else if (this.rentValue > 1500) score -= 1.0;
+                                    if (this.jobScore === 5) score += 1.0; else if (this.jobScore === 4) score += 0.5;
 
                                     score = Math.min(10.0, Math.max(1.0, score));
-
-                                    let badgeColor = '#10ac84'; 
-                                    let badgeText = 'Excellent';
-                                    if (score < 5.5) { badgeColor = '#e74c3c'; badgeText = 'Onéreux / Faible'; }
-                                    else if (score < 7.5) { badgeColor = '#ff9f0a'; badgeText = 'Équilibré'; }
+                                    let badgeColor = score >= 7.5 ? '#10ac84' : (score >= 5.5 ? '#ff9f0a' : '#e74c3c');
+                                    let badgeText = score >= 7.5 ? 'Excellent' : (score >= 5.5 ? 'Équilibré' : 'Onéreux');
 
                                     const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark';
                                     const opacityEmptyStar = isDarkNow ? '0.25' : '0.4';
                                     const starsHtml = '⭐'.repeat(this.jobScore) + 'Outline'.repeat(5 - this.jobScore).replace(/Outline/g, `<span style="opacity:${opacityEmptyStar}">⭐</span>`);
 
-                                    // Tooltip de carte volant
-                                    const tt = document.getElementById('map-custom-tooltip');
-                                    const taxRate = (c.Tax_Rate_Base * 100).toFixed(1);
-                                    tt.style.background = isDarkNow ? '#1e293b' : '#ffffff';
-                                    tt.style.color = isDarkNow ? '#f1f5f9' : '#1d1d1f';
-                                    tt.style.borderColor = isDarkNow ? 'rgba(0,122,255,0.4)' : 'rgba(0,122,255,0.2)';
-                                    tt.style.boxShadow = isDarkNow ? '0 12px 30px rgba(0,0,0,0.45)' : '0 8px 24px rgba(0,0,0,0.1)';
-                                    const divColor = isDarkNow ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-                                    const nameColor = isDarkNow ? '#38bdf8' : '#007AFF';
-                                    tt.innerHTML = `
-                                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#86868b;margin-bottom:2px;">Canton</div>
-                                        <div style="font-size:18px;font-weight:800;color:${nameColor};margin-bottom:6px;">${this.name}</div>
-                                        <div style="border-top:1px solid ${divColor};margin-bottom:6px;"></div>
-                                        <div style="font-size:12px; margin-bottom:3px;">📊 Fiscalité : <strong>${taxRate}%</strong></div>
-                                        <div style="font-size:12px; margin-bottom:3px;">🏠 Loyer 3.5p : <strong>${fmtNb(c.Rent_3_5_Rooms)} CHF</strong></div>
-                                        <div style="font-size:12px;">💼 Emploi : <span style="font-size:11px;">${starsHtml}</span></div>
-                                    `;
-                                    tt.style.display = 'block';
+                                    // Simulation croisée instantanée en local
+                                    const userSalarySlider = document.getElementById('salary');
+                                    const currentSalary = userSalarySlider ? parseFloat(userSalarySlider.value) : 180000;
+                                    const isMensuel = document.getElementById('period-toggle').checked;
+                                    const periodLabel = isMensuel ? '/ mois' : '/ an';
 
-                                    // LOADER UX ANTI-LAG (Généré proprement avec les variables locales valides)
+                                    const localSim = localCalculateFiscal(
+                                        isMensuel ? currentSalary * 12 : currentSalary,
+                                        this.cantonCode,
+                                        isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value,
+                                        isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value
+                                    );
+
+                                    const adjustedReste = isMensuel ? (localSim.values[6] / 12) : localSim.values[6];
+
                                     document.getElementById('stat-insight').innerHTML = `
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; background:var(--bg-job-row); padding:4px 8px; border-radius:5px; border:1px solid var(--border);">
                                             <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">💼 Marché Emploi :</span>
@@ -709,49 +712,27 @@
                                         <div style="border-top:1px dashed var(--border); margin:10px 0;"></div>
                                         <div style="background:rgba(0,122,255,0.06); border:1px dashed var(--primary); border-radius:10px; padding:10px; text-align:center;">
                                             <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.03em;">💰 Pouvoir d'achat disponible estimé :</div>
-                                            <div style="font-size:1.35rem; font-weight:800; color:var(--text-muted); margin:2px 0;">... CHF</div>
+                                            <div style="font-size:1.35rem; font-weight:800; color:${adjustedReste < 0 ? '#e74c3c' : 'var(--primary)'}; margin:2px 0;">
+                                                ${fmtNb(Math.round(adjustedReste))} CHF <span style="font-size:0.82rem; font-weight:500; color:var(--text-muted); text-transform:none;">${periodLabel}</span>
+                                            </div>
+                                            <div style="font-size:0.72rem; color:var(--text-muted); line-height:1.2;">Reste après impôts locaux, loyer moyen et dépenses indexées.</div>
                                         </div>
                                     `;
 
-                                    try {
-                                        const calcResp = await fetch('/calculate', {
-                                            method: 'POST',
-                                            headers: {'Content-Type': 'application/json'},
-                                            body: JSON.stringify({
-                                                salary: isMensuel ? currentSalary * 12 : currentSalary,
-                                                canton: c.Canton,
-                                                rent: c.Rent_3_5_Rooms * 12,
-                                                leisure: (1200 * c.Cost_of_Living_Factor) * 12
-                                            })
-                                        });
-                                        const calcData = await calcResp.json();
-                                        const rawResteAVivre = calcData.values[6]; 
-                                        const adjustedResteAVivre = isMensuel ? (rawResteAVivre / 12) : rawResteAVivre;
-
-                                        // Rendu définitif synchrone une fois les calculs achevés
-                                        document.getElementById('stat-insight').innerHTML = `
-                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; background:var(--bg-job-row); padding:4px 8px; border-radius:5px; border:1px solid var(--border);">
-                                                <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">💼 Marché Emploi :</span>
-                                                <span style="font-size:0.75rem;">${starsHtml}</span>
-                                            </div>
-                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                                <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">🎯 Note globale :</span>
-                                                <span style="background:${badgeColor}; color:white; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">${score.toFixed(1)}/10 — ${badgeText}</span>
-                                            </div>
-                                            <div style="border-top:1px dashed var(--border); margin:10px 0;"></div>
-                                            <div style="background:rgba(0,122,255,0.06); border:1px dashed var(--primary); border-radius:10px; padding:10px; text-align:center;">
-                                                <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.03em;">💰 Pouvoir d'achat disponible estimé :</div>
-                                                <div style="font-size:1.35rem; font-weight:800; color:${rawResteAVivre < 0 ? '#e74c3c' : 'var(--primary)'}; margin:2px 0;">
-                                                    ${fmtNb(Math.round(adjustedResteAVivre))} CHF <span style="font-size:0.82rem; font-weight:500; color:var(--text-muted); text-transform:none;">${periodLabel}</span>
-                                                </div>
-                                                <div style="font-size:0.72rem; color:var(--text-muted); line-height:1.2;">
-                                                    Reste après impôts locaux, loyer moyen et dépenses indexées.
-                                                </div>
-                                            </div>
-                                        `;
-                                    } catch (err) {
-                                        document.getElementById('stat-insight').innerHTML = `<div style="text-align:center; color:#e74c3c; font-size:0.75rem; padding:10px;">⚠️ Erreur de liaison avec le moteur fiscal.</div>`;
-                                    }
+                                    // Tooltip volant
+                                    const tt = document.getElementById('map-custom-tooltip');
+                                    tt.style.background = isDarkNow ? '#1e293b' : '#ffffff';
+                                    tt.style.color = isDarkNow ? '#f1f5f9' : '#1d1d1f';
+                                    tt.style.borderColor = isDarkNow ? 'rgba(0,122,255,0.4)' : 'rgba(0,122,255,0.2)';
+                                    tt.innerHTML = `
+                                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#86868b;margin-bottom:2px;">Canton</div>
+                                        <div style="font-size:18px;font-weight:800;color:${isDarkNow ? '#38bdf8' : '#007AFF'};margin-bottom:6px;">${this.name}</div>
+                                        <div style="border-top:1px solid ${isDarkNow?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)'};margin-bottom:6px;"></div>
+                                        <div style="font-size:12px; margin-bottom:3px;">📊 Fiscalité : <strong>${this.value.toFixed(1)}%</strong></div>
+                                        <div style="font-size:12px; margin-bottom:3px;">🏠 Loyer 3.5p : <strong>${fmtNb(this.rentValue)} CHF</strong></div>
+                                        <div style="font-size:12px;">💼 Emploi : <span style="font-size:11px;">${starsHtml}</span></div>
+                                    `;
+                                    tt.style.display = 'block';
                                 },
                                 mouseOut: function() {
                                     document.getElementById('map-custom-tooltip').style.display = 'none';
@@ -768,90 +749,47 @@
                 }]
             });
 
+            // Tracking souris tooltip
             const mapEl = document.getElementById('swiss-map-container');
             mapEl.addEventListener('mousemove', function(e) {
                 const tt = document.getElementById('map-custom-tooltip');
                 if (tt.style.display === 'none') return;
                 const offset = 18;
-                let x = e.clientX + offset;
-                let y = e.clientY + offset;
-                if (x + 240 > window.innerWidth)  x = e.clientX - 240;
+                let x = e.clientX + offset; let y = e.clientY + offset;
+                if (x + 240 > window.innerWidth) x = e.clientX - 240;
                 if (y + 130 > window.innerHeight) y = e.clientY - 130;
-                tt.style.left = x + 'px';
-                tt.style.top  = y + 'px';
-            });
-            mapEl.addEventListener('mouseleave', function() {
-                document.getElementById('map-custom-tooltip').style.display = 'none';
+                tt.style.left = x + 'px'; tt.style.top = y + 'px';
             });
 
-            const sorted = [...dataFromCsv].sort((a,b) => a.Tax_Rate_Base - b.Tax_Rate_Base).slice(0, 3);
+            // Rendu dynamique du Top 3
+            const sorted = Object.keys(cantonDataMatrix).map(k => ({c: k, v: cantonDataMatrix[k].tax * 100})).sort((a,b) => a.v - b.v).slice(0, 3);
             const rl = document.getElementById('ranking-list');
             if (rl) {
-                rl.innerHTML = sorted.map((c, i) => {
-                    const medals = ['🥇','🥈','🥉'];
-                    const pct = (c.Tax_Rate_Base * 100).toFixed(1);
-                    const barW = Math.round((c.Tax_Rate_Base / 0.28) * 100);
+                const medals = ['🥇','🥈','🥉'];
+                rl.innerHTML = sorted.map((item, i) => {
+                    const barW = Math.round((item.v / 25) * 100);
                     return `<div class="rank-row">
                         <span class="rank-medal">${medals[i]}</span>
-                        <span class="rank-name">${c.Canton}</span>
+                        <span class="rank-name">${item.c}</span>
                         <div class="rank-bar-wrap"><div class="rank-bar" style="width:${barW}%"></div></div>
-                        <span class="rank-pct">${pct}%</span>
+                        <span class="rank-pct">${item.v.toFixed(1)}%</span>
                     </div>`;
                 }).join('');
             }
-        } catch (e) { 
-            console.error("Erreur Map:", e); 
-        }
+        } catch (e) { console.error("Erreur d'initialisation de la carte:", e); }
     }
 
-        /**
-         * Scrolle vers une section spécifique en compensant la barre de navigation
-         * et force le redimensionnement des graphiques Plotly.
-         * @param {string} id - L'ID de la section cible ('top' ou 'map-section')
-         */
-        // Navigation vers une page — Flask sert /calculateur et /observatoire
-        function goTo(page) {
-            window.location.href = '/' + page;
-        }
-
-        // Scroll interne vers une section
-        function scrollToSection(id, smooth) {
-            if (id === 'top') {
-                window.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'instant' });
-            } else {
-                const el = document.getElementById(id);
-                if (el) {
-                    const absTop = el.getBoundingClientRect().top + window.scrollY;
-                    window.scrollTo({ top: absTop, behavior: smooth ? 'smooth' : 'instant' });
-                }
-            }
-            if (smooth) setTimeout(() => { if (window.Plotly) Plotly.Plots.resize('sankey_chart'); }, 600);
-        }
-
-        // Au chargement : positionne la page selon l'URL courante
-        function restoreSection() {
-            const path = window.location.pathname;
-            const targetId = path.includes('observatoire') ? 'map-section' : 'top';
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                scrollToSection(targetId, false);
-            }));
-        }
-
-    // Thème dark/light
     function toggleTheme() {
         const html = document.documentElement;
         const isDark = html.getAttribute('data-theme') === 'dark';
         const nextTheme = isDark ? 'light' : 'dark';
         
-        // 1. Bascule du thème global
         html.setAttribute('data-theme', nextTheme);
         document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
         localStorage.setItem('theme', nextTheme);
         
-        // 2. Mise à jour du graphique Sankey
         updateChart();
         
-        // 3. MISE À JOUR DE LA CARTE : On force Highcharts à repeindre les libellés avec le bon contraste
         const chart = Highcharts.charts.find(c => c && c.renderTo.id === 'swiss-map-container');
         if (chart) {
             chart.update({
@@ -865,40 +803,24 @@
                         }
                     }
                 }
-            }, true); // Le paramètre true force le redessinage immédiat
+            }, true);
         }
     }
 
     function openLeadModal() {
-        // Remplace 'VOTRE_ID_TALLY' par l'ID de ton formulaire (ex: mO6p2w)
-        Tally.openPopup('pbJxRq', {
-            layout: 'modal',
-            width: 600,
-            emoji: {
-                text: '🚀',
-                animation: 'wave'
-            }
-        });
+        Tally.openPopup('pbJxRq', { layout: 'modal', width: 600, emoji: { text: '🚀', animation: 'wave' } });
     }
 
     function showSection(sectionId) {
         const sections = ['home-section', 'calculator-section', 'map-section', 'info-section'];
-        
-        // Sauvegarde la section active pour la restaurer au refresh
         localStorage.setItem('activeSection', sectionId);
 
-        // 1. Gestion de l'affichage des blocs de contenu
         sections.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
                 if (id === sectionId) {
                     el.style.display = 'block';
-                    if (id === 'calculator-section') {
-                        setTimeout(() => Plotly.Plots.resize('sankey_chart'), 100);
-                    }
-                    if (id === 'map-section') {
-                        setTimeout(() => Plotly.Plots.resize('map_chart'), 100); 
-                    }
+                    if (id === 'calculator-section') setTimeout(() => Plotly.Plots.resize('sankey_chart'), 100);
                     setTimeout(() => el.style.opacity = '1', 10);
                 } else {
                     el.style.display = 'none';
@@ -907,30 +829,21 @@
             }
         });
 
-        // 2. AJOUT : Gestion de l'état actif sur les boutons de navigation
         const navButtons = document.querySelectorAll('.nav-btn');
         navButtons.forEach(btn => {
-            // On retire la classe active de tous les boutons
             btn.classList.remove('active');
-            
-            // On vérifie le onclick du bouton pour savoir vers quelle section il pointe
             const clickAttr = btn.getAttribute('onclick') || '';
-            if (clickAttr.includes(sectionId)) {
-                btn.classList.add('active'); // On ajoute la surbrillance sur le bouton de la page courante
-            }
+            if (clickAttr.includes(sectionId)) btn.classList.add('active');
         });
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Initialisation globale
     document.addEventListener('DOMContentLoaded', () => {
-        // Restaure le thème sauvegardé (défaut: light)
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.getElementById('theme-toggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
 
-        // Calcule la hauteur de la nav pour le layout
         const nav = document.querySelector('nav');
         if (nav) {
             const navH = nav.getBoundingClientRect().height;
@@ -938,7 +851,6 @@
             document.documentElement.style.setProperty('--calc-section-height', `calc(100vh - ${navH}px)`);
         }
 
-        // 1. On synchronise d'abord les inputs textuels avec les valeurs des sliders HTML de base
         ['salary', 'rent', 'leisure'].forEach(id => {
             const s = document.getElementById(id);
             const i = document.getElementById(id + 'Input');
@@ -946,18 +858,8 @@
             updateSliderFill(id);
         });
 
-        // 2. On charge d'abord la carte, ENSEUITE on va écraser les sliders avec les vraies données du CSV (GE)
         initMap().then(() => {
-            // Force l'appel de updateChart avec un faux événement ciblant Genève (GE)
-            // Cela va écraser les valeurs en dur par celles ultra-réalistes de ton CSV dès l'ouverture !
             updateChart({ target: { id: 'canton', value: 'GE' } });
-            
-            // Restaure la vue (Accueil, Calculateur, etc.)
-            const savedSection = localStorage.getItem('activeSection') || 'home-section';
-            showSection(savedSection);
-        }).catch((err) => {
-            console.error("Erreur d'initialisation:", err);
-            updateChart(); // Fallback de sécurité
             const savedSection = localStorage.getItem('activeSection') || 'home-section';
             showSection(savedSection);
         });
