@@ -560,12 +560,21 @@
         }
 
         // Calculateur local synchrone (Plus besoin d'appel réseau HTTP !)
+        // ... (le code que tu as déjà)
+
+        // Ajoute ces lignes juste après ton bloc if (event && event.target.id === 'period-toggle') { ... }
+        
+        // 1. Récupération des valeurs depuis les sliders
         const inputSalary = isMensuel ? document.getElementById('salary').value * 12 : document.getElementById('salary').value;
         const inputRent = isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value;
         const inputLeisure = isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value;
 
+        // 2. Calcul local avec ton nouveau moteur fiscal (localCalculateFiscal)
         const data = localCalculateFiscal(inputSalary, cantonValue, inputRent, inputLeisure);
+        
+        // 3. Rendu du graphique Sankey
         renderSankey(data, diviseur);
+    }
     }
 
     async function initMap() {
