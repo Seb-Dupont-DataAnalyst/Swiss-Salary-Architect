@@ -5,3 +5,4 @@ gunicorn
 pandas
 # Si tu as fait "import plotly" :
 plotly
+flask-cors
