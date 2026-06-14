@@ -444,55 +444,29 @@
             document.getElementById('leisureInput').value = vieVal;
             updateSliderFill('leisure');
         }
-        try {
-            const isMensuel = document.getElementById('period-toggle').checked;
-            const cantonValue = document.getElementById('canton').value;
-            const diviseur = isMensuel ? 12 : 1;
-            const elements = {
-                salary: { s: 'salary', i: 'salaryInput', maxA: 500000, maxM: 40000, stepA: 1000, stepM: 100 },
-                rent: { s: 'rent', i: 'rentInput', maxA: 100000, maxM: 10000, stepA: 500, stepM: 50 },
-                leisure: { s: 'leisure', i: 'leisureInput', maxA: 100000, maxM: 10000, stepA: 500, stepM: 50 }
-            };
+        const isMensuel = document.getElementById('period-toggle').checked;
+        const cantonValue = document.getElementById('canton').value;
+        const diviseur = isMensuel ? 12 : 1;
 
-            if (event && event.target.id === 'period-toggle') {
-                for (let key in elements) {
-                    const cfg = elements[key];
-                    const s = document.getElementById(cfg.s);
-                    const i = document.getElementById(cfg.i);
-                    let val = parseFloat(s.value);
-                    if (isMensuel) {
-                        val = Math.round((val / 12) / 10) * 10;
-                        [s, i].forEach(el => { el.max = cfg.maxM; el.step = cfg.stepM; el.value = val; });
-                    } else {
-                        val = val * 12;
-                        [s, i].forEach(el => { el.max = cfg.maxA; el.step = cfg.stepA; el.value = val; });
-                    }
-                    updateSliderFill(cfg.s);
-                }
-            }
+        // Calcul direct local (plus de fetch !)
+        const inputSalary = isMensuel ? document.getElementById('salary').value * 12 : document.getElementById('salary').value;
+        const inputRent = isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value;
+        const inputLeisure = isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value;
 
-            const response = await fetch('/calculate', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    salary: isMensuel ? document.getElementById('salary').value * 12 : document.getElementById('salary').value,
-                    canton: cantonValue,
-                    rent: isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value,
-                    leisure: isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value
-                })
-            });
-
-            const data = await response.json();
-            renderSankey(data, diviseur);
-        } catch (e) { console.error(e); }
+        const data = localCalculateFiscal(inputSalary, cantonValue, inputRent, inputLeisure);
+        renderSankey(data, diviseur);
     }
 
     async function initMap() {
         try {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-            const response = await fetch('/get_all_cantons');
-            const dataFromCsv = await response.json();
+            const dataFromCsv = Object.keys(cantonDataMatrix).map(code => ({
+            Canton: code,
+            Tax_Rate_Base: cantonDataMatrix[code].tax,
+            Rent_3_5_Rooms: cantonDataMatrix[code].rent,
+            Cost_of_Living_Factor: cantonDataMatrix[code].cost
+        }));
 
             const mapLabelsTranslation = {
                 'AG':'Argovie','AI':'Appenzell Rh. Int.','AR':'Appenzell Rh. Ext.',
