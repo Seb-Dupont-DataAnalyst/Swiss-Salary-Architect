@@ -1,0 +1,7 @@
+flask
+gunicorn
+# Si tu utilises des bibliothèques de calcul ou de données, ajoute-les ici.
+# Par exemple, si tu as fait "import pandas" dans ton code :
+pandas
+# Si tu as fait "import plotly" :
+plotly
