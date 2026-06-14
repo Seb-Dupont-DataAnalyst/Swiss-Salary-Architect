@@ -426,33 +426,34 @@
         }
     }
 
-    async function updateChart(event) {
+    function updateChart(event) {
+        const isMensuel = document.getElementById('period-toggle').checked;
+        const cantonValue = document.getElementById('canton').value;
+        const factor = isMensuel ? 1 : 12;
+
         if (event && event.target.id === 'canton') {
-            const response = await fetch('/get_canton_defaults?canton=' + event.target.value);
-            const defaults = await response.json();
-            const isMensuel = document.getElementById('period-toggle').checked;
-            const factor = isMensuel ? 1 : 12; 
+            // Utilise ta matrice locale au lieu de fetch
+            const defaults = cantonDataMatrix[cantonValue]; 
+            // Note: assure-toi que cantonDataMatrix est bien défini quelque part dans ton script
             
-            const rentVal = Math.round(defaults.rent * factor);
+            const rentVal = Math.round((defaults.rent / 12) * factor * 12);
             document.getElementById('rent').value = rentVal;
             document.getElementById('rentInput').value = rentVal;
             updateSliderFill('rent');
 
             const baseVie = 1200; 
-            const vieVal = Math.round((baseVie * defaults.cost_index) * factor);
+            const vieVal = Math.round((baseVie * defaults.cost) * factor);
             document.getElementById('leisure').value = vieVal;
             document.getElementById('leisureInput').value = vieVal;
             updateSliderFill('leisure');
         }
-        const isMensuel = document.getElementById('period-toggle').checked;
-        const cantonValue = document.getElementById('canton').value;
-        const diviseur = isMensuel ? 12 : 1;
 
-        // Calcul direct local (plus de fetch !)
+        const diviseur = isMensuel ? 12 : 1;
         const inputSalary = isMensuel ? document.getElementById('salary').value * 12 : document.getElementById('salary').value;
         const inputRent = isMensuel ? document.getElementById('rent').value * 12 : document.getElementById('rent').value;
         const inputLeisure = isMensuel ? document.getElementById('leisure').value * 12 : document.getElementById('leisure').value;
 
+        // Appel direct du moteur local
         const data = localCalculateFiscal(inputSalary, cantonValue, inputRent, inputLeisure);
         renderSankey(data, diviseur);
     }
@@ -687,45 +688,50 @@
                                         </div>
                                     `;
 
-                                    try {
-                                        const calcResp = await fetch('/calculate', {
-                                            method: 'POST',
-                                            headers: {'Content-Type': 'application/json'},
-                                            body: JSON.stringify({
-                                                salary: isMensuel ? currentSalary * 12 : currentSalary,
-                                                canton: c.Canton,
-                                                rent: c.Rent_3_5_Rooms * 12,
-                                                leisure: (1200 * c.Cost_of_Living_Factor) * 12
-                                            })
-                                        });
-                                        const calcData = await calcResp.json();
-                                        const rawResteAVivre = calcData.values[6]; 
-                                        const adjustedResteAVivre = isMensuel ? (rawResteAVivre / 12) : rawResteAVivre;
-
-                                        // Rendu définitif synchrone une fois les calculs achevés
-                                        document.getElementById('stat-insight').innerHTML = `
-                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; background:var(--bg-job-row); padding:4px 8px; border-radius:5px; border:1px solid var(--border);">
-                                                <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">💼 Marché Emploi :</span>
-                                                <span style="font-size:0.75rem;">${starsHtml}</span>
+                                    // Remplace le try/catch du fetch par ceci :
+                                    const localSim = localCalculateFiscal(
+                                        isMensuel ? currentSalary * 12 : currentSalary,
+                                        c.Canton,
+                                        c.Rent_3_5_Rooms * 12,
+                                        (1200 * c.Cost_of_Living_Factor) * 12
+                                    );
+                                    const adjustedResteAVivre = isMensuel ? (localSim.values[6] / 12) : localSim.values[6];
+                                
+                                    // Puis injecte le résultat directement
+                                    document.getElementById('stat-insight').innerHTML = `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; background:var(--bg-job-row); padding:4px 8px; border-radius:5px; border:1px solid var(--border);">
+                                            <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">💼 Marché Emploi :</span>
+                                            <span style="font-size:0.75rem;">${starsHtml}</span>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                            <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">🎯 Note globale :</span>
+                                            <span style="background:${badgeColor}; color:white; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">${score.toFixed(1)}/10 — ${badgeText}</span>
+                                        </div>
+                                        <div style="border-top:1px dashed var(--border); margin:10px 0;"></div>
+                                        <div style="background:rgba(0,122,255,0.06); border:1px dashed var(--primary); border-radius:10px; padding:10px; text-align:center;">
+                                            <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.03em;">💰 Pouvoir d'achat disponible estimé :</div>
+                                            <div style="font-size:1.35rem; font-weight:800; color:${localSim.values[6] < 0 ? '#e74c3c' : 'var(--primary)'}; margin:2px 0;">
+                                                ${fmtNb(Math.round(adjustedResteAVivre))} CHF <span style="font-size:0.82rem; font-weight:500; color:var(--text-muted); text-transform:none;">${periodLabel}</span>
                                             </div>
-                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                                <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">🎯 Note globale :</span>
-                                                <span style="background:${badgeColor}; color:white; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">${score.toFixed(1)}/10 — ${badgeText}</span>
+                                        </div>
+                                    `; // Puis injecte le résultat directement
+                                    document.getElementById('stat-insight').innerHTML = `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; background:var(--bg-job-row); padding:4px 8px; border-radius:5px; border:1px solid var(--border);">
+                                            <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">💼 Marché Emploi :</span>
+                                            <span style="font-size:0.75rem;">${starsHtml}</span>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                            <span style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">🎯 Note globale :</span>
+                                            <span style="background:${badgeColor}; color:white; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">${score.toFixed(1)}/10 — ${badgeText}</span>
+                                        </div>
+                                        <div style="border-top:1px dashed var(--border); margin:10px 0;"></div>
+                                        <div style="background:rgba(0,122,255,0.06); border:1px dashed var(--primary); border-radius:10px; padding:10px; text-align:center;">
+                                            <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.03em;">💰 Pouvoir d'achat disponible estimé :</div>
+                                            <div style="font-size:1.35rem; font-weight:800; color:${localSim.values[6] < 0 ? '#e74c3c' : 'var(--primary)'}; margin:2px 0;">
+                                                ${fmtNb(Math.round(adjustedResteAVivre))} CHF <span style="font-size:0.82rem; font-weight:500; color:var(--text-muted); text-transform:none;">${periodLabel}</span>
                                             </div>
-                                            <div style="border-top:1px dashed var(--border); margin:10px 0;"></div>
-                                            <div style="background:rgba(0,122,255,0.06); border:1px dashed var(--primary); border-radius:10px; padding:10px; text-align:center;">
-                                                <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:var(--primary); letter-spacing:0.03em;">💰 Pouvoir d'achat disponible estimé :</div>
-                                                <div style="font-size:1.35rem; font-weight:800; color:${rawResteAVivre < 0 ? '#e74c3c' : 'var(--primary)'}; margin:2px 0;">
-                                                    ${fmtNb(Math.round(adjustedResteAVivre))} CHF <span style="font-size:0.82rem; font-weight:500; color:var(--text-muted); text-transform:none;">${periodLabel}</span>
-                                                </div>
-                                                <div style="font-size:0.72rem; color:var(--text-muted); line-height:1.2;">
-                                                    Reste après impôts locaux, loyer moyen et dépenses indexées.
-                                                </div>
-                                            </div>
-                                        `;
-                                    } catch (err) {
-                                        document.getElementById('stat-insight').innerHTML = `<div style="text-align:center; color:#e74c3c; font-size:0.75rem; padding:10px;">⚠️ Erreur de liaison avec le moteur fiscal.</div>`;
-                                    }
+                                        </div>
+                                    `;
                                 },
                                 mouseOut: function() {
                                     document.getElementById('map-custom-tooltip').style.display = 'none';
